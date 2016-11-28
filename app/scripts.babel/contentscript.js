@@ -1,5 +1,17 @@
 'use strict';
 
+chrome.runtime.sendMessage({
+    from: 'content',
+    subject: 'filterDOMAction'
+});
+
+chrome.runtime.onMessage.addListener((msg, sender, response) => {
+    if (msg.from === 'popup' && msg.subject === 'filterDOM') {
+        
+    }
+});
+
+
 const currentURL = document.location.search;
 
 console.log(currentURL);
@@ -8,31 +20,51 @@ const startFilter = () => {
     console.log('Start Filter Action');
 }
 
-const parseURL = url => {
+const parseURL = (url, isCommunity = true) => {
     const parsed = decodeURIComponent(url);
-    const params = parsed.split(/\?\w\=|\_|\//g)
-                    .filter(e => ["rev", ""].indexOf(e) < 0);
 
-    if (params[0].indexOf("wall") >= 0) { // community post or comment
-        params[0] = -params[0].split('-')[1];
-    
-        if (params.length === 2) {
-            return {
-            type: "post", owner_id: params[0], item_id: params[1]
-            };
-        } else if (params.length === 3) {
-            return {
-            type: "comment", owner_id: params[0], item_id: params[2].slice(1)
-            };
-        }
-    } else if (params[0].indexOf("photo") >= 0)   { // photo
+    if (parsed.indexOf('?w=likes/') === -1) {
         return {
-            type: "photo", owner_id: params[0].split("photo")[1], item_id: params[1]
+            error: 'cannot filter likes on this page'
+        }
+    }
+
+    let params = parsed.split(/\?w=likes\//g)
+                    .filter(e => ["rev", ""].indexOf(e) < 0)[0]
+                    .split(/\W+/g);
+
+    if (params.length === 2) {
+        const ids = params[1].split('_');
+        ids[0] = isCommunity ? `-${ids[0]}` : ids[0];
+      
+        if (params[0] === "wall_reply") {
+            return {
+                type: "comment",
+                owner_id: ids[0],
+                item_id: ids[1]
+            };
+        } else if (params[0] === "wall") {
+            return {
+                type: "post",
+                owner_id: ids[0],
+                item_id: ids[1]
+            };
+        } else {
+            return {
+                type: params[0],
+                owner_id: ids[0],
+                item_id: ids[1]
+            }
         }
     } else {
+        const p = params[0].split(/([a-z]+?[\_[a-z]+)/g);
+        const ids = p[2].split('_');
+        ids[0] = isCommunity ? `-${ids[0]}` : ids[0];
         return {
-            error: "You cannot filter likes on this page"    
-        };
+            type: p[1],
+            owner_id: ids[0],
+            item_id: ids[1]
+        }
     }
 }
 

@@ -8,4 +8,8 @@ chrome.tabs.onUpdated.addListener(tabId => {
   chrome.pageAction.show(tabId);
 });
 
-console.log('\'Allo \'Allo! Event Page for Page Action');
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.from === 'content' && msg.subject === 'filterDOMAcion') {
+    chrome.pageAction.show(sender.tab.id);
+  }
+});

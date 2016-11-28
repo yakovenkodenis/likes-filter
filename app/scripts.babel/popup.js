@@ -1,22 +1,40 @@
 'use strict';
 
-const form = document.getElementById('form');
-const data = new FormData(form);
+const filterDOM = info => {
 
-console.log('POPUUP');
-console.log(data.entries());
+};
 
-chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-    const currentTab = tabs[0];
 
-    chrome.tabs.sendMessage(currentTab.id, { action: 'filter' }, response => {
-        console.log('Filter action sent');
+window.addEventListener('DOMContentLoaded', () => {
+
+    const submit = document.getElementById('submit'),
+          city = document.getElementById('city'),
+          age = document.getElementById('age');
+
+    submit.addEventListener('click', e => {
+        e.preventDefault();
+
+        const term = {
+            city: city.value,
+            age: age.value
+        };
+
+        chrome.tabs.query({
+            active: true,
+            currentWindow: true
+        }, tabs => {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {
+                    from: 'popup', 
+                    subject: 'filterDOM',
+                    term
+                },
+                filterDOM
+            );
+        });
+
     });
+
 });
-
-const sendFilterData = e => {
-    e.preventDefault();
-
-    
-}
 
