@@ -72,7 +72,12 @@ const onRequest = (request, sender, sendResponse) => {
     if (request.action == 'filter') {
         startFilter();
     }
-    sendResponse({ 'response': 'HELLOO', currentURL });
+    sendResponse({ 'response': 'HELLOO', params: parseURL(currentURL) });
 }
 
-chrome.extension.onRequest.addListener(onRequest);
+chrome.extension.onRequest.addListener((msg, sender, response) => {
+    if (msg.from === 'popup' && msg.subject == 'filterDOM') {
+        const domObj = document.getElementById('wk_content');
+        response(domObj);
+    }
+});
