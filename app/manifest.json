@@ -15,18 +15,16 @@
     ]
   },
   "permissions": [
-    "tabs",
-    "http://*/*",
-    "https://*/*",
-    "pageCapture",
-    "webRequest",
-    "*://*.google.com/"
+    "activeTab",
+    "https://vk.com/*",
+    "https://api.vk.com/*",
+    "webRequest"
   ],
   "content_scripts": [
     {
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "http://vk.com/*",
+        "https://vk.com/*"
       ],
       "js": [
         "scripts/contentscript.js"
@@ -36,7 +34,7 @@
     }
   ],
   "omnibox": {
-    "keyword": "OMNIBOX-KEYWORD"
+    "keyword": "vk-likes-filter"
   },
   "page_action": {
     "default_icon": {
