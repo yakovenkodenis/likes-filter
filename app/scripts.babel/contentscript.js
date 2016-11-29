@@ -51,7 +51,7 @@ const API = {
             + `&friends_only=0&count=${count}&offset=${offset}`;
     },
 
-    getUsersByIDs(userIDs, fields="city,bdate,photo_medium") {
+    getUsersByIDs(userIDs, fields = 'city,bdate,photo_medium') {
         return `${this.base}/users.get?user_ids=${userIDs}`
             + `&fields=${fields}&name_case=Nom&v=5.60`;
     },
@@ -134,22 +134,22 @@ const parseURL = (url, isCommunity = true) =>
         }
 
         let params = parsed.split(/\?w=likes\//g)
-                        .filter(e => ["rev", ""].indexOf(e) < 0)[0]
+                        .filter(e => ['rev', ''].indexOf(e) < 0)[0]
                         .split(/\W+/g);
 
         if (params.length === 2) {
             const ids = params[1].split('_');
             ids[0] = isCommunity ? `-${ids[0]}` : ids[0];
         
-            if (params[0] === "wall_reply") {
+            if (params[0] === 'wall_reply') {
                 resolve({
-                    type: "comment",
+                    type: 'comment',
                     owner_id: ids[0],
                     item_id: ids[1]
                 });
-            } else if (params[0] === "wall") {
+            } else if (params[0] === 'wall') {
                 resolve( {
-                    type: "post",
+                    type: 'post',
                     owner_id: ids[0],
                     item_id: ids[1]
                 });
@@ -254,10 +254,6 @@ const filterUsers = (users, { city, ageFrom, ageTo }) =>
 
 
 const injectDataToDOM = users => {
-    console.log('---------------')
-    console.log('injectDataToDOM')
-    console.log(users)
-    console.log('---------------')
     document.getElementById('wk_likes_more_link').remove();
     document.getElementById('wk_likes_rows').innerHTML = users.map(constructUserDOMElement).join('');
 }

@@ -1,5 +1,6 @@
 $padding: 20px;
-$accent: #33b5e5;
+/*$accent: #33b5e5;*/
+$accent: #45668e;
 $white: #ffffff;
 $black: #000000;
 $dark-gray: lighten($black, 20%);
@@ -8,6 +9,10 @@ body {
   padding: $padding;
   padding-top: $padding - 10px;
   width: 15em;
+}
+
+#logo {
+  color: $accent;
 }
 
 .form {
