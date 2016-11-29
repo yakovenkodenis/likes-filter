@@ -19,6 +19,10 @@ window.addEventListener('DOMContentLoaded', () => {
             age: age.value
         };
 
+        if (!term.city && !term.age) {
+            return;
+        }
+
         chrome.tabs.query({
             active: true,
             currentWindow: true
