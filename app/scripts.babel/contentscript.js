@@ -64,15 +64,9 @@ const API = {
 
 
 const checkIfURLisCommunity = community => {
-
     community = community.replace(/\//g, '');
 
-    console.log('-----------------');
-    console.log('checkIfURLisCommunity');
-    console.log(community);
-    console.log('-----------------');
-
-    if (/^[a-z]+$/g.test(community)) {
+    if (/^[a-z]+?[a-z0-9]*$/g.test(community)) {
         return new Promise((resolve, reject) => {
             const requestURL = API.resolveScreenName(community)
             performXHR(requestURL)
@@ -189,12 +183,12 @@ const getUserLikes = params =>
             } else {
                 const { response: { count } } = response;
                 let offset = 0;
-                let loops = Math.ceil(count / 1000);
+                let loops = Math.ceil(count / 200);
                 const promises = [];
 
                 while (loops--) {
                     promises.push(
-                        new Promise((res, rej) => {
+                        sleep()(new Promise((res, rej) => {
                             performXHR(
                                 API.getLikesIDs(params, offset)
                             ).then(resp => {
@@ -204,9 +198,9 @@ const getUserLikes = params =>
                                     res(resp.response.items);
                                 }
                             });
-                        })
+                        }))
                     );
-                    offset += 1000;
+                    offset += 200;
                     offset = Math.abs(count - offset) < 1000 ? Math.abs(count - offset) : offset;
                 }
 
@@ -223,8 +217,9 @@ const getUserObjects = userIDs =>
     new Promise((resolve, reject) => {
         const promises = [];
 
-        createGroupedArray(userIDs, 1000).forEach(group => {
-            promises.push(new Promise((res, rej) => {
+        createGroupedArray(userIDs, 200).forEach(group => {
+            promises.push(
+                sleep()(new Promise((res, rej) => {
                 const requestURL = API.getUsersByIDs(group);
                 performXHR(requestURL)
                     .then(response => {
@@ -234,7 +229,7 @@ const getUserObjects = userIDs =>
                             res(response.response);
                         }
                     });
-            }));
+            })));
         });
 
         Promise.all(promises)
@@ -259,6 +254,10 @@ const filterUsers = (users, { city, ageFrom, ageTo }) =>
 
 
 const injectDataToDOM = users => {
+    console.log('---------------')
+    console.log('injectDataToDOM')
+    console.log(users)
+    console.log('---------------')
     document.getElementById('wk_likes_more_link').remove();
     document.getElementById('wk_likes_rows').innerHTML = users.map(constructUserDOMElement).join('');
 }
@@ -305,3 +304,7 @@ const constructUserDOMElement = ({ id, first_name, last_name, photo_medium }) =>
 }
 
 const mapToHTTPS = url => url.indexOf('https') < 0 ? url.replace('http', 'https') : url;
+
+const sleep = () => (...args) => new Promise((resolve, reject) => {
+    setTimeout(() => resolve(...args), Math.floor(Math.random() * (50 - 10)) + 10)
+});
