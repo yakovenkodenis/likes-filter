@@ -9,14 +9,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const submit = document.getElementById('submit'),
           city = document.getElementById('city'),
-          age = document.getElementById('age');
+          ageFrom = document.getElementById('ageFrom'),
+          ageTo = document.getElementById('ageTo');
 
     submit.addEventListener('click', e => {
         e.preventDefault();
 
         const term = {
             city: city.value,
-            age: age.value
+            ageFrom: ageFrom.value,
+            ageTo: ageTo.value
         };
 
         if (!term.city && !term.age) {

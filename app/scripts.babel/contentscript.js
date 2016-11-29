@@ -25,34 +25,54 @@ chrome.runtime.onMessage.addListener((msg, sender, response) => {
 
 
 const filterChildrenInDOM = (parent, term) => {
-    // const userIDs = Array.prototype.map.call(
-    //     parent.childNodes,
-    //     child => child.dataset.id
-    // );
-
     checkIfURLisCommunity(document.location.pathname)
       .then(isCommunity => parseURL(document.location.search, isCommunity))
-      .then(params => getUserLikes(params));
+      .then(params => getUserLikes(params))
+      .then(userIDs => getUserObjects(userIDs))
+      .then(users => filterUsers(users, term))
+      .then(users => injectDataToDOM)
+      .catch(e => console.log(e));
 }
 
 
-const checkIfURLisCommunity = community =>
-    new Promise((resolve, reject) => {
-        const requestURL = API.getGroups(community);
-        performXHR(requestURL)
-            .then(response => {
-                if (response.error) {
-                    if (response.error.error_code) {
-                        resolve(false);
-                    } else {
+const checkIfURLisCommunity = community => {
+    community = community.replace(/\//g, '');
+
+    if (/^[a-z]+$/g.test(community)) {
+        return new Promise((resolve, reject) => {
+            const requestURL = API.resolveScreenName(community)
+            performXHR(requestURL)
+                .then(response => {
+                    if (response.error) {
                         reject({ error: 'XHR error' });
+                    } else {
+                        if (response.response.type === 'group') {
+                            resolve(true);
+                        } else {
+                            resolve(false);
+                        }
                     }
-                } else {
-                    resolve(true);
-                }
-            })
-            .catch(error => reject(error));
-    });
+                });
+        });
+    } else {
+        return new Promise((resolve, reject) => {
+            const requestURL = API.getGroups(community);
+            performXHR(requestURL)
+                .then(response => {
+                    if (response.error) {
+                        if (response.error.error_code) {
+                            resolve(false);
+                        } else {
+                            reject({ error: 'XHR error' });
+                        }
+                    } else {
+                        resolve(true);
+                    }
+                })
+                .catch(error => reject(error));
+        });
+    }
+}
 
 
 const performXHR = url =>
@@ -128,7 +148,7 @@ const parseURL = (url, isCommunity = true) =>
 const getUserLikes = params =>
     new Promise((resolve, reject) => {
         performXHR(
-            API.getLikesIDs(params, 0)
+            API.getLikesIDs(params, 0, 1)
         ).then(response => {
             if (response.error) {
                 resolve({ error: response.error });
@@ -157,12 +177,57 @@ const getUserLikes = params =>
                 }
 
                 Promise.all(promises)
-                  .then(responses => {
-                      resolve([].concat(...responses.filter(Array.isArray)));
-                  });
+                    .then(responses => {
+                        resolve([].concat(...responses.filter(Array.isArray)));
+                    });
             }
         });
     });
+
+
+const getUserObjects = userIDs =>
+    new Promise((resolve, reject) => {
+        const promises = [];
+
+        createGroupedArray(userIDs, 1000).forEach(group => {
+            promises.push(new Promise((res, rej) => {
+                const requestURL = API.getUsersByIDs(group);
+                performXHR(requestURL)
+                    .then(response => {
+                        if (response.error) {
+                            res({ error: 'XHR error in getUserObjects' });
+                        } else {
+                            res(response.response);
+                        }
+                    });
+            }));
+        });
+
+        Promise.all(promises)
+          .then(responses => resolve([].concat(...responses.filter(Array.isArray))));
+    });
+
+
+const filterUsers = (users, { city, ageFrom, ageTo }) => {
+    return new Promise((resolve, reject) => {
+        if (!users || users.length === 0) {
+            reject({ error: 'Wrong users parameter' });
+        } else {
+            resolve(
+                users.filter(user => {
+                    const age = getAge(user.bdate);
+                    return user.city.title.toLowerCase() === city.toLowerCase()
+                           && age >= ageFrom && age <= ageTo;  
+                })
+            );
+        }
+    });
+}
+
+
+const injectDataToDOM = users => {
+    document.getElementById('wk_likes_rows').innerHTML = users.map(constructUserDOMElement).join('');
+}
 
 
 const API = {
@@ -203,6 +268,15 @@ const getAge = vkDateString => {
         age--;
     }
     return age;
+}
+
+
+const createGroupedArray = (arr, chunkSize) => {
+    let groups = [], i;
+    for (i = 0; i < arr.length; i += chunkSize) {
+        groups.push(arr.slice(i, i + chunkSize));
+    }
+    return groups;
 }
 
 
